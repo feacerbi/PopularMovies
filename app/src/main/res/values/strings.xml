@@ -12,4 +12,6 @@
     <string name="movie_release_field">Release Date</string>
     <string name="movie_rating_field">Rating</string>
     <string name="movie_synopsis_field">Synopsis</string>
+    <string name="apply_button_title">Apply</string>
+    <string name="cancel_button_title">Cancel</string>
 </resources>

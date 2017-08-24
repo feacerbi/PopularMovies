@@ -52,6 +52,7 @@ public class MainActivity extends RxBaseActivity implements IMovieClickListener,
     MoviesAdapter adapter;
 
     public static final String POSTER_TRANSITION = "poster";
+    private int tempFilter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,18 +123,7 @@ public class MainActivity extends RxBaseActivity implements IMovieClickListener,
 
         switch (item.getItemId()) {
             case R.id.action_sort:
-                AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                builder.setTitle(R.string.movies_list_filter_title)
-                        .setItems(R.array.movies_list_filter, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialogInterface, int position) {
-                                currentFilter = (position == 0) ?
-                                        MoviesManager.MOST_POPULAR : MoviesManager.TOP_RATED ;
-                                swipeRefresh.setRefreshing(true);
-                                requestMovies(currentFilter);
-                            }
-                        })
-                        .show();
+                showFilterDialog();
 
                 return true;
             case R.id.action_settings:
@@ -141,6 +131,39 @@ public class MainActivity extends RxBaseActivity implements IMovieClickListener,
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private void showFilterDialog() {
+        tempFilter = currentFilter;
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.movies_list_filter_title)
+                .setSingleChoiceItems(
+                        R.array.movies_list_filter,
+                        currentFilter,
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int position) {
+                                tempFilter = (position == 0) ?
+                                        MoviesManager.MOST_POPULAR : MoviesManager.TOP_RATED ;
+                            }
+                        })
+                .setPositiveButton(R.string.apply_button_title, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        currentFilter = tempFilter;
+                        swipeRefresh.setRefreshing(true);
+                        requestMovies(currentFilter);
+                        dialogInterface.dismiss();
+                    }
+                })
+                .setNegativeButton(R.string.cancel_button_title, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.dismiss();
+                    }
+                })
+                .show();
     }
 
     @Override

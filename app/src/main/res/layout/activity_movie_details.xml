@@ -30,7 +30,6 @@
                 android:scaleType="centerCrop"
                 android:transitionName="poster"
                 android:contentDescription="@string/movie_poster_description"
-                android:fitsSystemWindows="true"
                 app:layout_collapseMode="parallax"/>
 
             <TextView

@@ -15,6 +15,10 @@ import com.squareup.picasso.Picasso;
 
 import org.parceler.Parcels;
 
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Locale;
+
 import br.com.felipeacerbi.popularmovies.R;
 import br.com.felipeacerbi.popularmovies.models.Movie;
 import butterknife.BindView;
@@ -71,7 +75,7 @@ public class MovieDetailsActivity extends AppCompatActivity {
 
         if(movie != null) {
             titleView.setText(movie.getTitle());
-            releaseView.setText(movie.getReleaseDate());
+            releaseView.setText(formatDate(movie.getReleaseDate()));
             ratingBar.setRating(movie.getRating() / 2);
             synopsisView.setText(movie.getOverview());
 
@@ -83,6 +87,21 @@ public class MovieDetailsActivity extends AppCompatActivity {
                     .centerCrop()
                     .into(moviePosterView);
         }
+    }
+
+    public String formatDate(String unformatted) {
+        Calendar now = Calendar.getInstance(Locale.getDefault());
+        String[] date = unformatted.split("-");
+
+        if(date.length == 3) {
+            now.set(Integer.parseInt(date[0]),
+                    Integer.parseInt(date[1]),
+                    Integer.parseInt(date[2]));
+        }
+
+        DateFormat df = DateFormat.getDateInstance(DateFormat.MEDIUM, Locale.getDefault());
+
+        return df.format(now.getTime());
     }
 
     @Override
