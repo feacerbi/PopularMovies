@@ -1,5 +1,7 @@
 <resources>
-    <string name="app_name">Popular Movies</string>
+    <!--Wiki (library) + Kino (Cinema in German)-->
+    <string name="app_name">Wikino</string>
+
     <string name="menu_action_settings">Settings</string>
     <string name="menu_action_sort">Sort</string>
     <string name="menu_action_refresh">Refresh</string>
