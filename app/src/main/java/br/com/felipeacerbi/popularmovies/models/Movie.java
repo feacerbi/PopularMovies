@@ -1,5 +1,10 @@
 package br.com.felipeacerbi.popularmovies.models;
 
+import android.arch.persistence.room.ColumnInfo;
+import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Ignore;
+import android.arch.persistence.room.PrimaryKey;
+import android.content.ContentValues;
 import android.os.Bundle;
 
 import org.parceler.Parcel;
@@ -8,28 +13,102 @@ import org.parceler.Parcels;
 import icepick.Bundler;
 
 @Parcel
+@Entity(tableName = Movie.TABLE_NAME)
 @SuppressWarnings({"UnusedDeclaration"})
 public class Movie implements Bundler<Movie> {
 
-    int id;
-    String title;
-    String thumbPath;
-    String overview;
-    String releaseDate;
-    float popularity;
-    float rating;
+    public static final String TABLE_NAME = "favorite_movies";
+    public static final String COLUMN_ID = "id";
+    private static final String COLUMN_TITLE = "title";
+    private static final String COLUMN_ORIGINAL_TITLE = "original_title";
+    private static final String COLUMN_THUMB_PATH = "thumb_path";
+    private static final String COLUMN_OVERVIEW = "overview";
+    private static final String COLUMN_RELEASE_DATE = "release_date";
+    private static final String COLUMN_POPULARITY = "popularity";
+    private static final String COLUMN_RATING = "rating";
+    private static final String COLUMN_VOTE_COUNT = "vote_count";
+    private static final String COLUMN_FAVORITE = "favorite";
 
+
+    @PrimaryKey
+    @ColumnInfo(index = true, name = COLUMN_ID)
+    int id;
+    @ColumnInfo(name = COLUMN_TITLE)
+    String title;
+    @ColumnInfo(name = COLUMN_ORIGINAL_TITLE)
+    String originalTitle;
+    @ColumnInfo(name = COLUMN_THUMB_PATH)
+    String thumbPath;
+    @ColumnInfo(name = COLUMN_OVERVIEW)
+    String overview;
+    @ColumnInfo(name = COLUMN_RELEASE_DATE)
+    String releaseDate;
+    @ColumnInfo(name = COLUMN_POPULARITY)
+    float popularity;
+    @ColumnInfo(name = COLUMN_RATING)
+    float rating;
+    @ColumnInfo(name = COLUMN_VOTE_COUNT)
+    int voteCount;
+    @ColumnInfo(name = COLUMN_FAVORITE)
+    boolean favorite;
+
+    @Ignore
     public Movie() {
     }
 
-    public Movie(int id, String title, String thumbPath, String overview, String releaseDate, float popularity, float rating) {
+    public Movie(int id, String title, String originalTitle, String thumbPath, String overview, String releaseDate, float popularity, float rating, int voteCount, boolean favorite) {
         this.id = id;
         this.title = title;
+        this.originalTitle = originalTitle;
         this.thumbPath = thumbPath;
         this.overview = overview;
         this.releaseDate = releaseDate;
         this.popularity = popularity;
         this.rating = rating;
+        this.voteCount = voteCount;
+        this.favorite = favorite;
+    }
+
+    public static Movie fromContentValues(ContentValues values) {
+        Movie movie = new Movie();
+
+        movie.setId(values.getAsInteger(COLUMN_ID));
+        movie.setTitle(values.getAsString(COLUMN_TITLE));
+
+        if(values.containsKey(COLUMN_ORIGINAL_TITLE)) {
+            movie.setOriginalTitle(values.getAsString(COLUMN_ORIGINAL_TITLE));
+        }
+        if(values.containsKey(COLUMN_THUMB_PATH)) {
+            movie.setThumbPath(values.getAsString(COLUMN_THUMB_PATH));
+        }
+        if(values.containsKey(COLUMN_OVERVIEW)) {
+            movie.setOverview(values.getAsString(COLUMN_OVERVIEW));
+        }
+        if(values.containsKey(COLUMN_RELEASE_DATE)) {
+            movie.setReleaseDate(values.getAsString(COLUMN_RELEASE_DATE));
+        }
+        if(values.containsKey(COLUMN_POPULARITY)) {
+            movie.setPopularity(values.getAsInteger(COLUMN_POPULARITY));
+        }
+        if(values.containsKey(COLUMN_RATING)) {
+            movie.setRating(values.getAsInteger(COLUMN_RATING));
+        }
+        if(values.containsKey(COLUMN_VOTE_COUNT)) {
+            movie.setVoteCount(values.getAsInteger(COLUMN_VOTE_COUNT));
+        }
+        if(values.containsKey(COLUMN_FAVORITE)) {
+            movie.setFavorite(values.getAsBoolean(COLUMN_FAVORITE));
+        }
+
+        return movie;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getTitle() {
@@ -38,6 +117,14 @@ public class Movie implements Bundler<Movie> {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getOriginalTitle() {
+        return originalTitle;
+    }
+
+    public void setOriginalTitle(String originalTitle) {
+        this.originalTitle = originalTitle;
     }
 
     public String getThumbPath() {
@@ -64,19 +151,11 @@ public class Movie implements Bundler<Movie> {
         this.releaseDate = releaseDate;
     }
 
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
     public float getPopularity() {
         return popularity;
     }
 
-    public void setPopularity(int popularity) {
+    public void setPopularity(float popularity) {
         this.popularity = popularity;
     }
 
@@ -84,8 +163,28 @@ public class Movie implements Bundler<Movie> {
         return rating;
     }
 
-    public void setRating(int rating) {
+    public void setRating(float rating) {
         this.rating = rating;
+    }
+
+    public int getVoteCount() {
+        return voteCount;
+    }
+
+    public void setVoteCount(int voteCount) {
+        this.voteCount = voteCount;
+    }
+
+    public boolean isFavorite() {
+        return favorite;
+    }
+
+    public void setFavorite(boolean favorite) {
+        this.favorite = favorite;
+    }
+
+    public float getStarRating() {
+        return getRating() / 2;
     }
 
     @Override
@@ -96,5 +195,10 @@ public class Movie implements Bundler<Movie> {
     @Override
     public Movie get(String key, Bundle bundle) {
         return Parcels.unwrap(bundle.getParcelable(key));
+    }
+
+    @Override
+    public boolean equals(Object movie) {
+        return movie instanceof Movie && getId() == ((Movie) movie).getId();
     }
 }

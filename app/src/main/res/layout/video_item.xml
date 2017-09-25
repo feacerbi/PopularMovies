@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="16dp">
+
+    <ImageView
+        android:id="@+id/trailer_image"
+        android:layout_width="160dp"
+        android:layout_height="100dp"
+        android:scaleType="centerCrop"
+        android:contentDescription="@string/trailer_cover"/>
+
+    <ImageView
+        android:layout_width="100dp"
+        android:layout_height="60dp"
+        android:src="@drawable/yt_logo_rgb_dark"
+        android:alpha="0.85"
+        android:contentDescription="@string/youtube_logo_description"
+        app:layout_constraintStart_toStartOf="@id/trailer_image"
+        app:layout_constraintEnd_toEndOf="@id/trailer_image"
+        app:layout_constraintTop_toTopOf="@id/trailer_image"
+        app:layout_constraintBottom_toBottomOf="@id/trailer_image"/>
+
+    <TextView
+        android:id="@+id/title"
+        android:textSize="18sp"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="2dp"
+        android:gravity="start"
+        android:maxLines="3"
+        android:ellipsize="end"
+        app:layout_constraintTop_toTopOf="@id/trailer_image"
+        app:layout_constraintStart_toEndOf="@id/trailer_image"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="Fight Club Trailer HD"/>
+
+    <TextView
+        android:id="@+id/type"
+        android:textSize="14sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="4dp"
+        app:layout_constraintTop_toBottomOf="@id/title"
+        app:layout_constraintStart_toEndOf="@id/trailer_image"
+        tools:text="Trailer"/>
+
+    <TextView
+        android:id="@+id/divider"
+        android:textSize="14sp"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_marginStart="4dp"
+        android:gravity="center_vertical"
+        app:layout_constraintTop_toTopOf="@id/type"
+        app:layout_constraintBottom_toBottomOf="@id/type"
+        app:layout_constraintStart_toEndOf="@id/type"
+        android:text="@string/divider"/>
+
+    <TextView
+        android:id="@+id/size"
+        android:textSize="14sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="4dp"
+        app:layout_constraintTop_toBottomOf="@id/title"
+        app:layout_constraintStart_toEndOf="@id/divider"
+        tools:text="720p"/>
+
+</android.support.constraint.ConstraintLayout>

@@ -3,5 +3,6 @@
     <string-array name="movies_list_filter">
         <item>Most popular</item>
         <item>Top rated</item>
+        <item>Favorites</item>
     </string-array>
 </resources>

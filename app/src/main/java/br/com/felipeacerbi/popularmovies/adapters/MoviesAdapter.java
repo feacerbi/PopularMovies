@@ -1,5 +1,6 @@
 package br.com.felipeacerbi.popularmovies.adapters;
 
+import android.support.constraint.ConstraintLayout;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.RecyclerView.Adapter;
 import android.view.LayoutInflater;
@@ -47,6 +48,8 @@ public class MoviesAdapter extends Adapter<RecyclerView.ViewHolder> {
             }
         });
 
+        movieViewHolder.icon.setVisibility((movie.isFavorite()) ? View.VISIBLE : View.INVISIBLE);
+
         Picasso.with(listener.getContext())
                 .load(listener.getContext().getString(R.string.api_images_base_path) + movie.getThumbPath())
                 .placeholder(R.drawable.placeholder)
@@ -60,22 +63,20 @@ public class MoviesAdapter extends Adapter<RecyclerView.ViewHolder> {
         listener.onItemClick(movie, posterView);
     }
 
+    public void setItems(List<Movie> items) {
+        moviesList = items;
+        notifyDataSetChanged();
+    }
+
     @Override
     public int getItemCount() {
         return moviesList.size();
     }
 
-//    public void addItems(List<Movie> movies) {
-//        moviesList.clear();
-//        notifyItemRangeRemoved(0, moviesList.size());
-//
-//        moviesList.addAll(movies);
-//        notifyItemRangeInserted(0, movies.size());
-//    }
-
     class MovieViewHolder extends RecyclerView.ViewHolder {
 
         @BindView(R.id.movie_thumb) ImageView thumb;
+        @BindView(R.id.favorite_icon) ConstraintLayout icon;
 
         MovieViewHolder(View itemView) {
             super(itemView);
