@@ -109,29 +109,26 @@ public class MainActivity extends AppCompatActivity implements LifecycleRegistry
         }
     }
 
-    private void refreshMovies() {
-        swipeRefresh.setRefreshing(true);
-
+    @Override
+    protected void onRestart() {
+        super.onRestart();
         if(currentFilter == MoviesFilter.FAVORITES) {
-            dataManager.requestFavorites(this, new RequestCallback<List<Movie>>() {
-                @Override
-                public void onSuccess(List<Movie> favorites) {
-                    loadedMovies.clear();
-                    loadedMovies.addItems(favorites);
-                    setUpAdapter();
-                }
+            loadFavorites();
+        } else {
+            syncFavorites();
+        }
+    }
 
-                @Override
-                public void onError(String error) {
-                    Log.e(TAG, "Error accessing database.");
-                }
-            });
+    private void refreshMovies() {
+        if(currentFilter == MoviesFilter.FAVORITES) {
+            loadFavorites();
         } else {
             loadMovies();
         }
     }
 
     private void loadMovies() {
+        swipeRefresh.setRefreshing(true);
         dataManager.requestMovies(currentFilter, loadedMovies.getCurrentPage(),  new RequestCallback<List<Movie>>() {
             @Override
             public void onSuccess(List<Movie> movies) {
@@ -141,23 +138,46 @@ public class MainActivity extends AppCompatActivity implements LifecycleRegistry
 
             @Override
             public void onError(String error) {
-                swipeRefresh.setRefreshing(false);
-
-                if(loadedMovies.isEmpty()) {
-                    noMovies.setVisibility(View.VISIBLE);
-                    moviesList.setVisibility(View.GONE);
-                }
-
-                Snackbar.make(moviesList, R.string.fail_movie_request_message, Snackbar.LENGTH_LONG)
-                        .setAction(R.string.snackbar_retry_action, new View.OnClickListener() {
-                            @Override
-                            public void onClick(View view) {
-                                refreshMovies();
-                            }
-                        })
-                        .show();
+                Log.e(TAG, "Error loading movies " + error);
+                onErrorUI();
             }
         });
+    }
+
+    private void loadFavorites() {
+        swipeRefresh.setRefreshing(true);
+        dataManager.requestFavorites(this, new RequestCallback<List<Movie>>() {
+            @Override
+            public void onSuccess(List<Movie> favorites) {
+                loadedMovies.clear();
+                loadedMovies.addItems(favorites);
+                setUpAdapter();
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "Error accessing database " + error);
+                onErrorUI();
+            }
+        });
+    }
+
+    private void onErrorUI() {
+        swipeRefresh.setRefreshing(false);
+
+        if(loadedMovies.isEmpty()) {
+            noMovies.setVisibility(View.VISIBLE);
+            moviesList.setVisibility(View.GONE);
+        }
+
+        Snackbar.make(moviesList, R.string.fail_movie_request_message, Snackbar.LENGTH_LONG)
+                .setAction(R.string.snackbar_retry_action, new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        refreshMovies();
+                    }
+                })
+                .show();
     }
 
     private void syncFavorites() {
@@ -172,7 +192,8 @@ public class MainActivity extends AppCompatActivity implements LifecycleRegistry
 
             @Override
             public void onError(String error) {
-
+                Log.e(TAG, "Error syncing favorites " + error);
+                onErrorUI();
             }
         });
     }

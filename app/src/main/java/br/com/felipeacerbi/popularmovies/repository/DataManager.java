@@ -1,9 +1,10 @@
 package br.com.felipeacerbi.popularmovies.repository;
 
-import android.arch.lifecycle.LifecycleOwner;
-import android.arch.lifecycle.LiveData;
-import android.support.annotation.Nullable;
+import android.content.Context;
+import android.database.Cursor;
+import android.net.Uri;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -12,7 +13,8 @@ import javax.inject.Singleton;
 import br.com.felipeacerbi.popularmovies.models.Movie;
 import br.com.felipeacerbi.popularmovies.models.Review;
 import br.com.felipeacerbi.popularmovies.models.Video;
-import br.com.felipeacerbi.popularmovies.room.FavoritesDatabase;
+import br.com.felipeacerbi.popularmovies.sqlite.FavoriteMoviesContract;
+import br.com.felipeacerbi.popularmovies.sqlite.FavoriteMoviesContract.MovieEntry;
 import br.com.felipeacerbi.popularmovies.utils.RequestCallback;
 import io.reactivex.Completable;
 import io.reactivex.CompletableObserver;
@@ -33,39 +35,34 @@ public class DataManager {
     RestDataSource restDataSource;
 
     @Inject
-    FavoritesDatabase favoritesDatabase;
-
-    @Inject
     DataManager() {}
 
-    public void requestAddFavorite(Movie movie, final RequestCallback<String> addFavoriteRequest) {
-        addFavorite(movie)
+    public void requestAddFavorite(Context context, Movie movie, RequestCallback<String> addFavoriteRequest) {
+        addFavorite(context, movie)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(createCompletableObserver(addFavoriteRequest));
     }
 
-    public void requestRemoveFavorite(Movie movie, final RequestCallback<String> removeFavoriteRequest) {
-        removeFavorite(movie)
+    public void requestRemoveFavorite(Context context, Movie movie, RequestCallback<String> removeFavoriteRequest) {
+        removeFavorite(context, movie)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(createCompletableObserver(removeFavoriteRequest));
     }
 
-    public void requestFavorites(LifecycleOwner owner, final RequestCallback<List<Movie>> favoritesRequest) {
-        favoritesDatabase.favoriteDAO().getFavorites().observe(owner, new android.arch.lifecycle.Observer<List<Movie>>() {
-            @Override
-            public void onChanged(@Nullable List<Movie> favorites) {
-                    favoritesRequest.onSuccess(favorites);
-            }
-        });
+    public void requestFavorites(Context context, RequestCallback<List<Movie>> favoritesRequest) {
+        getFavorites(context)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(createObserver(favoritesRequest));
     }
 
-    public void requestMovies(int filter, int page, final RequestCallback<List<Movie>> moviesRequest) {
-            getMovies(filter, page)
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(createObserver(moviesRequest));
+    public void requestMovies(int filter, int page, RequestCallback<List<Movie>> moviesRequest) {
+        getMovies(filter, page)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(createObserver(moviesRequest));
     }
 
     public void requestTrailers(int movieId, RequestCallback<List<Video>> trailersRequest) {
@@ -111,20 +108,52 @@ public class DataManager {
         };
     }
 
-    private Completable addFavorite(final Movie movie) {
+    private Completable addFavorite(final Context context, final Movie movie) {
         return Completable.fromAction(new Action() {
             @Override
             public void run() throws Exception {
-                favoritesDatabase.favoriteDAO().addFavorite(movie);
+                if(context != null) {
+                    context.getContentResolver().insert(FavoriteMoviesContract.MovieEntry.CONTENT_URI, movie.toContentValues());
+                }
             }
         });
     }
 
-    private Completable removeFavorite(final Movie movie) {
+    private Completable removeFavorite(final Context context, final Movie movie) {
         return Completable.fromAction(new Action() {
             @Override
             public void run() throws Exception {
-                favoritesDatabase.favoriteDAO().removeFavorite(movie);
+                if(context != null) {
+                    Uri uri = MovieEntry.CONTENT_URI.buildUpon().appendPath(String.valueOf(movie.getId())).build();
+                    context.getContentResolver().delete(uri, null, null);
+                }
+            }
+        });
+    }
+
+    private Observable<List<Movie>> getFavorites(final Context context) {
+        return Observable.create(new ObservableOnSubscribe<List<Movie>>() {
+            @Override
+            public void subscribe(final ObservableEmitter<List<Movie>> subscriber) throws Exception {
+                if(context != null) {
+                    Cursor cursor = context.getContentResolver()
+                            .query(FavoriteMoviesContract.MovieEntry.CONTENT_URI,
+                                    null,
+                                    null,
+                                    null,
+                                    FavoriteMoviesContract.MovieEntry.COLUMN_TITLE);
+
+                    if (cursor != null) {
+                        List<Movie> favorites = createListFromCursor(cursor);
+                        cursor.close();
+                        subscriber.onNext(favorites);
+                        subscriber.onComplete();
+                    } else {
+                        subscriber.onError(new Throwable("Error retrieving favorites"));
+                    }
+                } else {
+                    subscriber.onError(new Throwable("Error retrieving favorites"));
+                }
             }
         });
     }
@@ -187,5 +216,15 @@ public class DataManager {
                 });
             }
         });
+    }
+
+    private List<Movie> createListFromCursor(Cursor cursor) {
+        List<Movie> favorites = new ArrayList<>();
+        while(cursor.moveToNext()) {
+            Movie movie = Movie.fromCursor(cursor);
+            favorites.add(movie);
+        }
+
+        return favorites;
     }
 }
