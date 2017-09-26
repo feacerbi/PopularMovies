@@ -144,7 +144,7 @@ public class MovieDetailsActivity extends AppCompatActivity implements Lifecycle
 
     private void toggleFavorite() {
         if(movie.isFavorite()) {
-            dataManager.requestRemoveFavorite(movie, new RequestCallback<String>() {
+            dataManager.requestRemoveFavorite(this, movie, new RequestCallback<String>() {
                 @Override
                 public void onSuccess(String message) {
                     Toast.makeText(MovieDetailsActivity.this, R.string.remove_success_message, Toast.LENGTH_SHORT).show();
@@ -158,7 +158,7 @@ public class MovieDetailsActivity extends AppCompatActivity implements Lifecycle
                 }
             });
         } else {
-            dataManager.requestAddFavorite(movie, new RequestCallback<String>() {
+            dataManager.requestAddFavorite(this, movie, new RequestCallback<String>() {
                 @Override
                 public void onSuccess(String message) {
                     Toast.makeText(MovieDetailsActivity.this, R.string.add_success_message, Toast.LENGTH_SHORT).show();

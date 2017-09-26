@@ -5,11 +5,13 @@ import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.Ignore;
 import android.arch.persistence.room.PrimaryKey;
 import android.content.ContentValues;
+import android.database.Cursor;
 import android.os.Bundle;
 
 import org.parceler.Parcel;
 import org.parceler.Parcels;
 
+import br.com.felipeacerbi.popularmovies.sqlite.FavoriteMoviesContract;
 import icepick.Bundler;
 
 @Parcel
@@ -101,6 +103,38 @@ public class Movie implements Bundler<Movie> {
         }
 
         return movie;
+    }
+
+    public static Movie fromCursor(Cursor cursor) {
+        return new Movie(
+                cursor.getInt(cursor.getColumnIndex(FavoriteMoviesContract.MovieEntry.COLUMN_ID)),
+                cursor.getString(cursor.getColumnIndex(FavoriteMoviesContract.MovieEntry.COLUMN_TITLE)),
+                cursor.getString(cursor.getColumnIndex(FavoriteMoviesContract.MovieEntry.COLUMN_ORIGINAL_TITLE)),
+                cursor.getString(cursor.getColumnIndex(FavoriteMoviesContract.MovieEntry.COLUMN_THUMB_PATH)),
+                cursor.getString(cursor.getColumnIndex(FavoriteMoviesContract.MovieEntry.COLUMN_OVERVIEW)),
+                cursor.getString(cursor.getColumnIndex(FavoriteMoviesContract.MovieEntry.COLUMN_RELEASE_DATE)),
+                cursor.getFloat(cursor.getColumnIndex(FavoriteMoviesContract.MovieEntry.COLUMN_POPULARITY)),
+                cursor.getFloat(cursor.getColumnIndex(FavoriteMoviesContract.MovieEntry.COLUMN_RATING)),
+                cursor.getInt(cursor.getColumnIndex(FavoriteMoviesContract.MovieEntry.COLUMN_VOTE_COUNT)),
+                (cursor.getInt(cursor.getColumnIndex(FavoriteMoviesContract.MovieEntry.COLUMN_FAVORITE)) == 1)
+        );
+    }
+
+    public ContentValues toContentValues() {
+        ContentValues contentValues = new ContentValues();
+
+        contentValues.put(FavoriteMoviesContract.MovieEntry.COLUMN_ID, getId());
+        contentValues.put(FavoriteMoviesContract.MovieEntry.COLUMN_TITLE, getTitle());
+        contentValues.put(FavoriteMoviesContract.MovieEntry.COLUMN_ORIGINAL_TITLE, getOriginalTitle());
+        contentValues.put(FavoriteMoviesContract.MovieEntry.COLUMN_THUMB_PATH, getThumbPath());
+        contentValues.put(FavoriteMoviesContract.MovieEntry.COLUMN_OVERVIEW, getOverview());
+        contentValues.put(FavoriteMoviesContract.MovieEntry.COLUMN_RELEASE_DATE, getReleaseDate());
+        contentValues.put(FavoriteMoviesContract.MovieEntry.COLUMN_POPULARITY, getPopularity());
+        contentValues.put(FavoriteMoviesContract.MovieEntry.COLUMN_RATING, getRating());
+        contentValues.put(FavoriteMoviesContract.MovieEntry.COLUMN_VOTE_COUNT, getVoteCount());
+        contentValues.put(FavoriteMoviesContract.MovieEntry.COLUMN_FAVORITE, isFavorite() ? 1 : 0);
+
+        return contentValues;
     }
 
     public int getId() {

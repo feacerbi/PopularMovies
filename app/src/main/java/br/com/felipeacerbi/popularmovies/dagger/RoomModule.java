@@ -10,6 +10,7 @@ import br.com.felipeacerbi.popularmovies.room.FavoritesDatabase;
 import dagger.Module;
 import dagger.Provides;
 
+// Not used for now
 @Module
 class RoomModule {
 

@@ -6,32 +6,29 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.UriMatcher;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 
-import javax.inject.Inject;
-
 import br.com.felipeacerbi.popularmovies.models.Movie;
-import br.com.felipeacerbi.popularmovies.room.FavoritesDatabase;
+import br.com.felipeacerbi.popularmovies.sqlite.FavoriteMoviesContract;
+import br.com.felipeacerbi.popularmovies.sqlite.FavoriteMoviesContract.MovieEntry;
+import br.com.felipeacerbi.popularmovies.sqlite.MoviesDBHelper;
 
 public class ContentProviderDataSource extends ContentProvider {
 
     private static final int FAVORITES = 100;
     private static final int FAVORITE_WITH_ID = 101;
 
-    private static final String AUTHORITY = "br.com.felipeacerbi.popularmovies";
-    public static final String SCHEME = "content://";
-    public static final Uri BASE_CONTENT_URI = Uri.parse(SCHEME + AUTHORITY);
-
-    public static final Uri CONTENT_URI = BASE_CONTENT_URI.buildUpon().appendPath(Movie.TABLE_NAME).build();
-
     private static final UriMatcher matcher = createUriMatcher();
 
-    @Inject
-    FavoritesDatabase favoritesDatabase;
+    private MoviesDBHelper moviesDBHelper;
 
     @Override
     public boolean onCreate() {
+
+        moviesDBHelper = new MoviesDBHelper(getContext());
+
         return true;
     }
 
@@ -39,12 +36,25 @@ public class ContentProviderDataSource extends ContentProvider {
     public int delete(@NonNull Uri uri, String selection, String[] selectionArgs) {
         int match = matcher.match(uri);
 
+        SQLiteDatabase database = moviesDBHelper.getWritableDatabase();
+
+        int deletes;
+
         switch (match) {
             case FAVORITE_WITH_ID:
-                return favoritesDatabase.favoriteDAO().removeProviderFavorite((int) ContentUris.parseId(uri));
+                deletes = database.delete(MovieEntry.TABLE_NAME, MovieEntry.COLUMN_ID + "=?", new String[]{String.valueOf(ContentUris.parseId(uri))});
+                break;
             default:
                 throw new UnsupportedOperationException("Not supported Uri: " + uri);
         }
+
+        Context context = getContext();
+
+        if(deletes > 0 && context != null) {
+            context.getContentResolver().notifyChange(uri, null);
+        }
+
+        return deletes;
     }
 
     @Override
@@ -53,9 +63,9 @@ public class ContentProviderDataSource extends ContentProvider {
 
         switch (match) {
             case FAVORITES:
-                return "vnd.android.cursor.dir/" + AUTHORITY + "." + Movie.TABLE_NAME;
+                return "vnd.android.cursor.dir/" + FavoriteMoviesContract.AUTHORITY + "." + MovieEntry.TABLE_NAME;
             case FAVORITE_WITH_ID:
-                return "vnd.android.cursor.item/" + AUTHORITY + "." + Movie.TABLE_NAME;
+                return "vnd.android.cursor.item/" + FavoriteMoviesContract.AUTHORITY + "." + MovieEntry.TABLE_NAME;
             default:
                 throw new UnsupportedOperationException("Not supported Uri: " + uri);
         }
@@ -64,29 +74,19 @@ public class ContentProviderDataSource extends ContentProvider {
     @Override
     public Uri insert(@NonNull Uri uri, ContentValues values) {
         int match = matcher.match(uri);
+        Uri returnUri;
+
+        SQLiteDatabase database = moviesDBHelper.getWritableDatabase();
 
         switch (match) {
             case FAVORITES:
-                long id = favoritesDatabase.favoriteDAO().addFavorite(Movie.fromContentValues(values));
-                return ContentUris.withAppendedId(uri, id);
-            default:
-                throw new UnsupportedOperationException("Not supported Uri: " + uri);
-        }
-    }
+                long id = database.insert(MovieEntry.TABLE_NAME, null, values);
 
-    @Override
-    public Cursor query(@NonNull Uri uri, String[] projection, String selection,
-                        String[] selectionArgs, String sortOrder) {
-        int match = matcher.match(uri);
-
-        Cursor cursor;
-
-        switch (match) {
-            case FAVORITES:
-                cursor = favoritesDatabase.favoriteDAO().getProviderFavorites();
-                break;
-            case FAVORITE_WITH_ID:
-                cursor = favoritesDatabase.favoriteDAO().getProviderFavorite((int) ContentUris.parseId(uri));
+                if(id > 0) {
+                    returnUri = ContentUris.withAppendedId(MovieEntry.CONTENT_URI, id);
+                } else {
+                    throw new android.database.SQLException("Failed to insert row into " + uri);
+                }
                 break;
             default:
                 throw new UnsupportedOperationException("Not supported Uri: " + uri);
@@ -95,11 +95,43 @@ public class ContentProviderDataSource extends ContentProvider {
         Context context = getContext();
 
         if(context != null) {
-            cursor.setNotificationUri(getContext().getContentResolver(), uri);
-            return cursor;
-        } else {
-            return null;
+            context.getContentResolver().notifyChange(uri, null);
         }
+
+        return returnUri;
+    }
+
+    @Override
+    public Cursor query(@NonNull Uri uri, String[] projection, String selection,
+                        String[] selectionArgs, String sortOrder) {
+        int match = matcher.match(uri);
+
+        SQLiteDatabase database = moviesDBHelper.getReadableDatabase();
+
+        Cursor cursor;
+
+        switch (match) {
+            case FAVORITES:
+                cursor = database.query(
+                        MovieEntry.TABLE_NAME,
+                        projection,
+                        selection,
+                        selectionArgs,
+                        null,
+                        null,
+                        sortOrder);
+                break;
+            default:
+                throw new UnsupportedOperationException("Not supported Uri: " + uri);
+        }
+
+        Context context = getContext();
+
+        if(context != null) {
+            cursor.setNotificationUri(context.getContentResolver(), uri);
+        }
+
+        return cursor;
     }
 
     @Override
@@ -107,19 +139,32 @@ public class ContentProviderDataSource extends ContentProvider {
                       String[] selectionArgs) {
         int match = matcher.match(uri);
 
+        SQLiteDatabase database = moviesDBHelper.getWritableDatabase();
+
+        int updates;
+
         switch (match) {
             case FAVORITE_WITH_ID:
-                return favoritesDatabase.favoriteDAO().updateFavorite(Movie.fromContentValues(values));
+                updates = database.update(MovieEntry.TABLE_NAME, values, MovieEntry.COLUMN_ID + "=?", new String[]{String.valueOf(ContentUris.parseId(uri))});
+                break;
             default:
                 throw new UnsupportedOperationException("Not supported Uri: " + uri);
         }
+
+        Context context = getContext();
+
+        if(updates > 0 && context != null) {
+            context.getContentResolver().notifyChange(uri, null);
+        }
+
+        return updates;
     }
 
     private static UriMatcher createUriMatcher() {
         UriMatcher uriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
-        uriMatcher.addURI(AUTHORITY, Movie.TABLE_NAME, FAVORITES);
-        uriMatcher.addURI(AUTHORITY, Movie.TABLE_NAME + "/*", FAVORITE_WITH_ID);
+        uriMatcher.addURI(FavoriteMoviesContract.AUTHORITY, Movie.TABLE_NAME, FAVORITES);
+        uriMatcher.addURI(FavoriteMoviesContract.AUTHORITY, Movie.TABLE_NAME + "/*", FAVORITE_WITH_ID);
 
         return uriMatcher;
     }
